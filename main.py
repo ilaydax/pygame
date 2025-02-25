@@ -1,24 +1,22 @@
-import pygame
 from plyr import Player
 from pltfrm import Platform
 from monster import Monster
 from bullet import Bullet
-import cnfg
 import random
 from menu import main_menu  # Menü ekranını içe aktarıyoruz
+
+# Pygame Zero ayarları
+WIDTH = 800  # Ekran genişliği
+HEIGHT = 600  # Ekran yüksekliği
+TITLE = "Platformer Game"  # Oyun başlığı
 
 # Önce menü ekranını aç
 main_menu()  # Kullanıcı "Play" tuşuna basana kadar burada kalır
 
-pygame.init()
-screen = pygame.display.set_mode((cnfg.SCREEN_WIDTH, cnfg.SCREEN_HEIGHT))
-clock = pygame.time.Clock()
+# Arka plan resmi
+background = "background"  # 'background.png' dosyası images klasöründe olmalı
 
-background = pygame.image.load(cnfg.BACKGROUND_IMAGE)
-background_width, background_height = background.get_size()
-
-scroll_x = 0
-
+# Oyuncu nesnesi
 player = Player()
 
 # Başlangıç platformları
@@ -57,68 +55,67 @@ def generate_new_platform():
 # Bullet ve Monster listeleri
 bullets = []
 platforms_passed = 0
-running = True
+current_time = 0  # Zamanlama için sayaç
 
-while running:
-    screen.fill((0, 0, 0))
+def draw():
+    """Ekrana her şeyi çizer."""
+    screen.blit(background, (0, 0))  # Arka planı çiz
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    keys = pygame.key.get_pressed()
-
-    scroll_x -= cnfg.BACKGROUND_SCROLL_SPEED
-    if scroll_x <= -background_width:
-        scroll_x = 0
-
-    # Arka plan kaydırma
-    screen.blit(background, (scroll_x, 0))
-    screen.blit(background, (scroll_x + background_width, 0))
-
-    # Canavarlar ve ateş etme
-    current_time = pygame.time.get_ticks()
+    # Canavarlar ve mermiler
     for monster in monsters:
-        bullet = monster.update(current_time)
-        if bullet:
-            bullets.append(bullet)
-        monster.draw(screen)
-
-    # Mermileri hareket ettirme
-    for bullet in bullets[:]:
-        bullet.move()
-        bullet.draw(screen)
-        if bullet.off_screen():
-            bullets.remove(bullet)
-
-    # Karakter ve platformları çizme
-    player.update(keys, screen, platforms)
-    for platform in platforms:
-        platform.draw(screen)
-
-    # Yeni platform oluşturma
-    if player.rect.bottom <= platforms[-1].rect.top:
-        platforms_passed += 1
-        if platforms_passed >= 2:
-            new_platform = generate_new_platform()
-            platforms.append(new_platform)
-            platforms_passed = 0
-
-    # Game over kontrolü
+        monster.draw()
     for bullet in bullets:
-        if player.rect.colliderect(bullet.rect):
-            player.game_over = True
-            break
+        bullet.draw()
 
+    # Platformlar ve oyuncu
+    for platform in platforms:
+        platform.draw()
+    player.draw()
+
+    # Game over durumu
     if player.game_over:
-        font = pygame.font.Font(None, 74)
-        text = font.render("GAME OVER", True, (255, 0, 0))
-        screen.blit(text, (cnfg.SCREEN_WIDTH // 2 - 150, cnfg.SCREEN_HEIGHT // 2 - 50))
-        pygame.display.update()
-        pygame.time.delay(2000)
-        running = False
+        screen.draw.text("GAME OVER", center=(WIDTH // 2, HEIGHT // 2), color=(255, 0, 0), fontsize=74)
 
-    pygame.display.update()
-    clock.tick(60)
+def update():
+    """Oyunun her karede güncellenmesini sağlar."""
+    global platforms_passed, current_time
 
-pygame.quit()
+    if not player.game_over:
+        keys = keyboard  # Klavye girişlerini al
+
+        # Zamanlayıcıyı güncelle
+        current_time += 1
+
+        # Canavarlar ve ateş etme
+        for monster in monsters:
+            if current_time % 60 == 0:  # Her 60 karede bir ateş et
+                bullet = monster.shoot()
+                if bullet:
+                    bullets.append(bullet)
+
+        # Mermileri hareket ettirme
+        for bullet in bullets[:]:
+            bullet.move()
+            if bullet.off_screen():
+                bullets.remove(bullet)
+
+        # Oyuncuyu güncelle
+        player.update(keys, platforms)
+
+        # Yeni platform oluşturma
+        if player.rect.bottom <= platforms[-1].rect.top:
+            platforms_passed += 1
+            if platforms_passed >= 2:
+                new_platform = generate_new_platform()
+                platforms.append(new_platform)
+                platforms_passed = 0
+
+        # Game over kontrolü
+        for bullet in bullets:
+            if player.rect.colliderect(bullet.rect):
+                player.game_over = True
+                break
+
+def on_mouse_down(pos):
+    """Fare tıklamasını işler."""
+    pass  # Fare tıklamaları için gerekirse buraya kod ekleyebilirsiniz

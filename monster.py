@@ -1,17 +1,17 @@
-# monster.py (Yukarı doğru ateş etme)
-import pygame
-from bullet import Bullet
+from pygame import Rect  
+from bullet import Bullet  
 
 class Monster:
     def __init__(self, x, y):
-        self.image = pygame.image.load('lkn_images/monster.png').convert_alpha()
-        self.image = pygame.transform.scale(self.image, (40, 40))
-        self.rect = self.image.get_rect(midbottom=(x, y))
+        # Pygame Zero'da görüntü yükleme
+        self.image = 'monster'  # 'monster.png' dosyası images klasöründe olmalı
+        self.rect = Rect(x, y, 40, 40)  # Canavarın boyutları (40x40)
         self.shoot_timer = 0
         self.shoot_interval = 1000  # Ateş etme aralığı (ms)
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
+    def draw(self):
+        """Canavarın ekrana çizilmesini sağlar."""
+        screen.blit(self.image, self.rect.topleft)  # Pygame Zero'da blit işlemi
 
     def shoot(self):
         """Canavar ateş ettiğinde mermi oluşturur."""
